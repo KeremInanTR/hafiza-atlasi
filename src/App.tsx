@@ -7,7 +7,16 @@ import {
   saveMemories,
   saveReflections,
 } from './utils/memoryStore';
+import {
+  loadCustomCases,
+  saveCustomCases,
+  loadWargameBestMultiplier,
+  saveWargameBestMultiplier,
+} from './utils/valueCreationEngine';
 import { MemoryEntry, ReflectionEntry } from './types/memory';
+import { CustomFiveXCase, StreamId } from './types/valueCreation';
+import { StreamCaseStudiesTab } from './components/StreamCaseStudiesTab';
+import { BusinessGamingTab } from './components/BusinessGamingTab';
 import { CapsuleComparisonTab } from './components/CapsuleComparisonTab';
 import { TimelineExplorerTab } from './components/TimelineExplorerTab';
 import { AnalyticsInsightsTab } from './components/AnalyticsInsightsTab';
@@ -19,19 +28,36 @@ import {
   Brain,
   ShieldCheck,
   RotateCcw,
+  Layers,
+  Gamepad2,
 } from 'lucide-react';
 import { INITIAL_MEMORIES } from './data/initialMemories';
+import { STREAM_CASE_STUDIES } from './data/valueCreationStreams';
 
-type ActiveTab = 'capsule' | 'timeline' | 'analytics' | 'gym';
+type ActiveTab =
+  | 'streams'
+  | 'wargame'
+  | 'capsule'
+  | 'timeline'
+  | 'analytics'
+  | 'gym';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('capsule');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('streams');
+  const [wargameStreamFilter, setWargameStreamFilter] = useState<StreamId | 'all'>('all');
+
   const [memories, setMemories] = useState<MemoryEntry[]>(() => loadMemories());
   const [reflections, setReflections] = useState<ReflectionEntry[]>(() =>
     loadReflections()
   );
   const [bestMoves, setBestMoves] = useState<number | null>(() =>
     loadBestMoves()
+  );
+  const [customCases, setCustomCases] = useState<CustomFiveXCase[]>(() =>
+    loadCustomCases()
+  );
+  const [wargameBestMultiplier, setWargameBestMultiplier] = useState<number>(() =>
+    loadWargameBestMultiplier()
   );
 
   useEffect(() => {
@@ -41,6 +67,10 @@ export function App() {
   useEffect(() => {
     saveReflections(reflections);
   }, [reflections]);
+
+  useEffect(() => {
+    saveCustomCases(customCases);
+  }, [customCases]);
 
   const handleAddMemory = (entry: MemoryEntry) => {
     setMemories((prev) => [entry, ...prev]);
@@ -69,6 +99,24 @@ export function App() {
     saveBestMoves(moves);
   };
 
+  const handleAddCustomCase = (item: CustomFiveXCase) => {
+    setCustomCases((prev) => [item, ...prev]);
+  };
+
+  const handleDeleteCustomCase = (id: string) => {
+    setCustomCases((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const handleUpdateBestMultiplier = (mult: number) => {
+    setWargameBestMultiplier(mult);
+    saveWargameBestMultiplier(mult);
+  };
+
+  const handleLaunchWargameForStream = (streamId: StreamId) => {
+    setWargameStreamFilter(streamId);
+    setActiveTab('wargame');
+  };
+
   const handleResetDefaults = () => {
     setMemories(INITIAL_MEMORIES);
     saveMemories(INITIAL_MEMORIES);
@@ -79,24 +127,28 @@ export function App() {
       <header className="app-header">
         <div className="header-brand">
           <div className="brand-eyebrow">
-            <ShieldCheck size={14} /> ÖZEL ALAN · ZAMAN KAPSÜLÜ & HAFIZA ATLASI
+            <ShieldCheck size={14} /> ÖZEL ALAN · 5X VALUE CREATION & HAFIZA ATLASI
           </div>
-          <h1>5 Yıl Önce Bugün & Kişisel Hafıza Atlası</h1>
+          <h1>5x Value Creation Engine, Stream Case Studies & Hafıza Atlası</h1>
           <p className="header-subtitle">
-            Kasım 2021 (GMT+7 Güneydoğu Asya & dijital kurulum izleri) ile Kasım 2026 (GMT+1
-            Hollanda düzeni, kuramsal notlar ve karar analizleri) arasındaki 5 yıllık hafıza
-            köprüsü.
+            Kasım 2021 – Kasım 2026 kişisel içgörülerini 5 stratejik akışta (Konut, Mobilite, Super
+            Agent, Küresel Lojistik, Projectivity) 5x değer üretim metodolojisi, maliyet/kanıt
+            matrisi ve interaktif business gaming ile çalıştıran karar platformu.
           </p>
         </div>
 
         <div className="header-meta">
           <div className="stat-chip">
-            <span>KAYITLI DÖNEM İZİ</span>
-            <strong>{memories.length} Başlık</strong>
+            <span>5X AKIŞ & VAKA</span>
+            <strong>{STREAM_CASE_STUDIES.length + customCases.length} Stream</strong>
           </div>
           <div className="stat-chip">
-            <span>KAPSÜL NOTU</span>
-            <strong>{reflections.length} Not</strong>
+            <span>WARGAME REKORU</span>
+            <strong>{wargameBestMultiplier.toFixed(2)}x</strong>
+          </div>
+          <div className="stat-chip">
+            <span>HAFIZA İZİ</span>
+            <strong>{memories.length} Başlık</strong>
           </div>
           <button
             type="button"
@@ -109,7 +161,27 @@ export function App() {
         </div>
       </header>
 
-      <nav className="app-tabs" aria-label="Hafıza uygulaması bölümleri">
+      <nav className="app-tabs app-tabs-six" aria-label="5x Value Creation ve Hafıza bölümleri">
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'streams' ? 'active' : ''}`}
+          onClick={() => setActiveTab('streams')}
+          data-testid="nav-streams"
+        >
+          <Layers size={16} />
+          <span>5x Stream Case Studies</span>
+        </button>
+
+        <button
+          type="button"
+          className={`tab-btn ${activeTab === 'wargame' ? 'active' : ''}`}
+          onClick={() => setActiveTab('wargame')}
+          data-testid="nav-wargame"
+        >
+          <Gamepad2 size={16} />
+          <span>Business Gaming & Wargame</span>
+        </button>
+
         <button
           type="button"
           className={`tab-btn ${activeTab === 'capsule' ? 'active' : ''}`}
@@ -152,6 +224,23 @@ export function App() {
       </nav>
 
       <main className="app-main">
+        {activeTab === 'streams' && (
+          <StreamCaseStudiesTab
+            customCases={customCases}
+            onAddCustomCase={handleAddCustomCase}
+            onDeleteCustomCase={handleDeleteCustomCase}
+            onLaunchWargameForStream={handleLaunchWargameForStream}
+          />
+        )}
+
+        {activeTab === 'wargame' && (
+          <BusinessGamingTab
+            initialFilterStreamId={wargameStreamFilter}
+            bestMultiplier={wargameBestMultiplier}
+            onUpdateBestMultiplier={handleUpdateBestMultiplier}
+          />
+        )}
+
         {activeTab === 'capsule' && (
           <CapsuleComparisonTab
             reflections={reflections}
@@ -183,9 +272,9 @@ export function App() {
 
       <footer className="app-footer">
         <p>
-          Gizlilik & Kapsam İlkesi: Özel hesap adresleri, şifreler ve üçüncü kişi verileri bu
-          arayüzde tutulmaz. Eklediğin yeni notlar yalnızca kendi tarayıcında (LocalStorage)
-          saklanır; tarihli görev/araştırma bağlamları doğrulanmış kalıcı olgulardan ayrı
+          Gizlilik & Veri İzolasyonu İlkesi (domain=personal): Özel hesap adresleri, şifreler,
+          kimlik numaraları ve üçüncü kişi verileri bu arayüzde tutulmaz. Danone ve UNIQLM
+          alanlarından tamamen izoledir; tarihli görev bağlamları doğrulanmış kalıcı olgulardan ayrı
           etiketlenir.
         </p>
       </footer>
